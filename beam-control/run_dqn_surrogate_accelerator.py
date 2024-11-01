@@ -10,9 +10,9 @@ from datetime import datetime
 import time
 
 import gym
+import gym_accelerators
 
-
-env = gym.make ( 'ExaBooster-v{}'.format ( ENV_VERSION ) )
+# env = gym.make ( 'ExaBooster-v{}'.format ( ENV_VERSION ) )
 
 # Try plaidml
 #os.environ["KERAS_BACKEND"] = "tensorflow.keras.backend"
@@ -86,7 +86,7 @@ def run(episodes:int = 1,
         save_directory = DQN_SAVE_DIR + '/play_results_dqn_exaboost_env{}_{}/'.format(ENV_VERSION, timestamp)
     # Make directory for information
     if not os.path.exists(save_directory):
-        os.mkdir(save_directory)
+        os.makedirs(save_directory)
     logger.info('Save directory:{}'.format(save_directory))
     env.save_dir = save_directory
     safe_file_prefix = 'fnal_exaboost_env{}_dqn_mlp_episodes{}_steps{}_{}'.format(ENV_VERSION, EPISODES, NSTEPS, timestamp)

@@ -1,4 +1,4 @@
-name: ecoder-env
+name: fmls-sensor-data-compression
 channels:
   - conda-forge
   - defaults

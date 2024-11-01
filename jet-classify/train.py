@@ -18,6 +18,7 @@ def main(args):
     # Fetch the jet tagging dataset from Open ML
     input_bits = param["model"]["quantization"]["input_bits"]
     input_int_bits = param["model"]["quantization"]["input_int_bits"]
+
     X_train, X_test, y_train, y_test, le_classes = data.load_data(
         bits=input_bits, int_bits=input_int_bits
     )

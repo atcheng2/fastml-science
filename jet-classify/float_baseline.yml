@@ -6,11 +6,11 @@ model:
     - 32
     - 32
   quantization:
-    fc_bits: None
-    fc_int_bits: None
-    relu_bits: None
-    input_bits: None
-    input_int_bits: None
+    fc_bits: null
+    fc_int_bits: null
+    relu_bits: null
+    input_bits: null
+    input_int_bits: null
 fit:
   batch_size: 1024
   compile:

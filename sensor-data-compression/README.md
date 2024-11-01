@@ -1,30 +1,29 @@
-# Ecoder
-Training ECON-T autoencoder model
+# Sensor Data Compression
+
+## Environment setup
+### Requirements
+- Miniconda
+- Python 3.7
+
+### Create Environment
+    $ conda env create -f environment.yml
+
+### Enable Environment
+    $ conda activate fmls-sensor-data-compression
+
+### Input Data
+
+    $ mkdir -p data/nELinks_5
+
+- Downlaod `nELinks_5` data from [CERNBox][cernbox-download] and move into `data/nELinks_5`
+
+[cernbox-download]: https://cernbox.cern.ch/files/link/public/YpAWu24aw6EaBk7/
+
+## Training Reference Implementation (Ecoder)
 ![model](./sensor_data_compression_model.drawio.png)
 
-This repo is based on the work done here https://github.com/cmantill/Ecoder which was accomplished using the original repo found here (https://github.com/kakwok/Ecoder).
+The provided reference implementation is based off of https://github.com/cmantill/Ecoder which was accomplished using the original repo found here (https://github.com/kakwok/Ecoder).
 
-
-
-## Setup
-
-Local setup using miniconda3
-```
-source install_miniconda3.sh # if conda is not installed in your computer
-source setup.sh # if you do not have the ecoder-env environment (i.e. if it is your first time)
-conda activate ecoder-env
-```
-
-## Input data
-
-Get data from Cernbox
-```
-mkdir data/nELinks_5
-```
-Download the data and place it in `data/nELinks_5`
-cernbox: https://cernbox.cern.ch/index.php/s/YpAWu24aw6EaBk7
-
-## Training ECON-T autoencoder
 By default model, the autoencoder uses telescope loss, we can train the model as such:
 ### Train Float Point model
 ```

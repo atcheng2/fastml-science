@@ -2,53 +2,22 @@
 [![DOI](https://zenodo.org/badge/445208377.svg)](https://zenodo.org/badge/latestdoi/445208377)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-Implementations of the `fastml-science` benchmark models, including a standard Keras (float) and QKeras (quantized) implementations.
+Implementations of the `fastml-science` benchmark models, including standard Keras (float) and QKeras (quantized) implementations.
 
-# jet-classify
+## General Requirements
 
-## Requirements:
-Python 3.8
+- [Miniconda](https://docs.anaconda.com/miniconda/miniconda-install/)
+- Python 3.7 (Sensor Data Compression)
+- Python 3.8 (Beam Control, Jet Classification)
 
-```
-conda env create -f environment.yml
-```
+## Overview of Benchmarks
 
-## Training:
+| Benchmark                                          | Method        | Baseline Implementation Architecture |
+| -------------------------------------------------- | ------------- | ------------------------------------ |
+| [Jet Classification][jet-classify]                 | Supervised    | Multi-layer Perceptron               |
+| [Sensor Data Compression][sensor-data-compression] | Unsupervised  | CNN Autoencoder                      |
+| [Beam Control][beam-control]                       | Reinforcement | Deep Q Network + MLP                 |
 
-```
-python3 train.py -c <config.yml>
-```
-
-Upon training completion, graphs for the ROC for each tagger, are saved to the output directory, along with a .h5 saved model file. 
-
-The benchmark includes a float/unquantized 3 layer model as well as a uniformally quantized 6b model
-
-## Sample Runs
-
-### Training Float Baseline:
-
-```
-python3 train.py -c float_baseline.yml
-```
-![Alt text](jet-classify/model/float_baseline/keras_roc_curve.png?raw=true "Float Baseline ROC Curve")
-
-`Model test accuracy = 0.766`
-
-`Model test weighted average AUC = 0.943`
-
-### Training Quantized Baseline:
-
-```
-python3 train.py -c quantized_baseline.yml
-```
-![Alt text](jet-classify/model/quantized_baseline/keras_roc_curve.png?raw=true "Quantized Baseline ROC Curve")
-
-`Model test accuracy = 0.764`
-
-`Model test weighted average AUC = 0.941`
-
-# beam-control
-WIP
-
-# sensor-data-compression
-WIP
+[jet-classify]: jet-classify/README.md
+[sensor-data-compression]: sensor-data-compression/README.md
+[beam-control]: beam-control/README.md

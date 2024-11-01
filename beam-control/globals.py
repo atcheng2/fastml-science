@@ -29,6 +29,7 @@ SURROGATE_VERSION = 6
 DQN_CONFIG_FILE = sys.path[-1 ] + '/config/dqn_setup.json'
 
 ARCH_TYPE = 'MLP'
+# ARCH_TYPE = 'MLP_Quantized'
 
 NMODELS = 1
 
@@ -65,14 +66,14 @@ if TRAIN_SURROGATE == True:
     surrogate_path = os.path.dirname(SURROGATE_PLOT_DIR)
     surrogate_dir = "surrogate_plots_{}".format(timestamp)
     surrogate_dir_path = os.path.join(surrogate_path,surrogate_dir)
-    os.mkdir(surrogate_dir_path)
+    os.makedirs(surrogate_dir_path)
     PLOTS_DIR_FOR_SURROGATE = surrogate_dir_path
 
 POLICY_RESULTS_DIR  = sys.path[-1] +  '/results/plots/policy_plots/'
 ep_dir = "episode_plots_{}".format(timestamp)
 dir_path = os.path.dirname(POLICY_RESULTS_DIR)
 eps_path = os.path.join(dir_path, ep_dir)
-os.mkdir(eps_path)
+os.makedirs(eps_path)
 EPISODES_PLOTS_DIR = eps_path
 
 #  --------------- make new directories to save training plots categorized by timestamp ---------------

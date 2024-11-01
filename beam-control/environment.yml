@@ -1,17 +1,19 @@
-name: fmls-jet-classify
+name: fmls-beam-control
 channels:
   - conda-forge
 dependencies:
   - python=3.8
   - pip
   - pip:
-    - matplotlib
-    - numpy
-    - PyYAML
-    - scikit-learn
+    - gym
     - tensorflow
-    - tqdm
+    - keras
     - pandas
-    - fxpmath
+    - numpy
+    - matplotlib
+    - seaborn
+    - scikit-learn
+    - scipy
+    - tqdm
+    - jupyter
     - git+https://github.com/google/qkeras#egg=qkeras
-    # - git+https://github.com/kentaroy47/keras-Opcounter
