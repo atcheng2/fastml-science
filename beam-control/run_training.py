@@ -1,7 +1,6 @@
 from globals import *
 from run_dqn_surrogate_accelerator import run
 import tensorflow as tf
-from train_surrogate import train
 
 if __name__ == "__main__" :
     # ----------- This part is to avoid any CUBLAS errors ------------------------------
@@ -19,21 +18,8 @@ if __name__ == "__main__" :
             print( e )
     # ----------- This part is to avoid any CUBLAS errors ------------------------------
 
-    if TRAIN_SURROGATE :
-        train(
-            nsteps = NSTEPS ,
-            look_forward = LOOK_FORWARD ,
-            look_back = LOOK_BACK ,
-            loss = 'mse' ,
-            optimizer = 'Adam' ,
-            learning_rate = 1e-2 ,
-            epochs = EPOCHS ,
-            batch_size = BATCHES ,
-            num_outputs = OUTPUTS ,
-            clipnorm = 1.0 ,
-            clipvalue = 0.5 ,
-            variables = VARIABLES
-        )
+    os.makedirs(EPISODES_PLOTS_DIR)
+
     run( episodes = AGENT_EPISODES ,
          nsteps = AGENT_NSTEPS ,
          in_play_mode = IN_PLAY_MODE )

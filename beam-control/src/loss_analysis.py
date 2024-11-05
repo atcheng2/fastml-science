@@ -18,13 +18,6 @@ plt.rcParams ['ytick.labelsize'] = 14
 plt.rcParams ['font.family'] = [u'serif']
 plt.rcParams ['font.size'] = 14
 
-def unscale(var_name,
-            tseries,
-            scale_dict):
-  from_model = np.asarray(tseries)
-  update = from_model*scale_dict[str(var_name)]["range"] + scale_dict[str(var_name)]["median"]
-  return(update)
-
 def loss_assessment_plots ( booster_model ,
                             X ,
                             Y ,
@@ -32,7 +25,7 @@ def loss_assessment_plots ( booster_model ,
                             data ,
                             model_file_name ,
                             save_plot_name: str = "" ,
-                            concate_axis: int = 1,
+                            var_axis: int = 1,
                             save_plots: bool = True) :
     loss_trace = []
     vloss_trace = []
@@ -103,11 +96,18 @@ def loss_assessment_plots ( booster_model ,
     Y_predict_var0 = data[0][0].inverse_transform(Y_predict[start:end, 0 ].reshape(-1,1))
     Y_predict_var1 = data[1][0].inverse_transform( Y_predict[start :end , 1].reshape( -1 , 1 ) )
 
-    x_bvimin = data[0][0].inverse_transform(x_test[start:end, 0 , -1].reshape(-1,1))
-    x_biminer = data[1][0].inverse_transform(x_test[start:end, 1 , -1].reshape(-1,1))
-    x_b_vimin = data[2][0].inverse_transform(x_test[start :end , 2 , -1].reshape( -1 , 1 ))
-    x_alpha = 0.01 * data[5][0].inverse_transform(x_test[start :end , 5 , -1].reshape( -1 , 1 ))
-    x_gamma = 0.00001 * data[4][0].inverse_transform(x_test[start :end , 5 , -1].reshape( -1 , 1 ))
+    if var_axis == 1:
+        x_bvimin = data[0][0].inverse_transform(x_test[start:end, 0 , -1].reshape(-1,1))
+        x_biminer = data[1][0].inverse_transform(x_test[start:end, 1 , -1].reshape(-1,1))
+        x_b_vimin = data[2][0].inverse_transform(x_test[start :end , 2 , -1].reshape( -1 , 1 ))
+        x_alpha = 0.01 * data[5][0].inverse_transform(x_test[start :end , 5 , -1].reshape( -1 , 1 ))
+        x_gamma = 0.00001 * data[4][0].inverse_transform(x_test[start :end , 4 , -1].reshape( -1 , 1 ))
+    else:
+        x_bvimin = data[0][0].inverse_transform(x_test[start:end, -1, 0].reshape(-1,1))
+        x_biminer = data[1][0].inverse_transform(x_test[start:end, -1, 1].reshape(-1,1))
+        x_b_vimin = data[2][0].inverse_transform(x_test[start :end , -1, 2].reshape( -1 , 1 ))
+        x_alpha = 0.01 * data[5][0].inverse_transform(x_test[start :end , -1, 5].reshape( -1 , 1 ))
+        x_gamma = 0.00001 * data[4][0].inverse_transform(x_test[start :end , -1, 4].reshape( -1 , 1 ))
 
     beta = [0]
     for i in range( len( x_b_vimin ) ) :

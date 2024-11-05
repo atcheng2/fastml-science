@@ -52,14 +52,11 @@ def get_data_for_variable ( df ,
     X_train , Y_train = create_dataset ( train ,
                                          look_back ,
                                          look_forward )
-    X_train = np.reshape( X_train , (X_train.shape[0] , X_train.shape[1] , 1) )
-    Y_train = np.reshape ( Y_train , (Y_train.shape [0] , Y_train.shape [1]) )
 
     X_test , Y_test = create_dataset ( test ,
                                        look_back = look_back ,
                                        look_forward = look_forward )
-    X_test = np.reshape( X_test , (X_test.shape[0], X_test.shape[1], 1))
-    Y_test = np.reshape ( Y_test , (Y_test.shape [0] , Y_test.shape [1]) )
+
     return scaler, X_train , Y_train , X_test , Y_test
 
 
@@ -68,7 +65,7 @@ def get_train_test_split ( variables ,
                            nsteps: int = 50000 ,
                            look_forward: int = 1 ,
                            look_back: int = 1 ,
-                           concate_axis: int = 1
+                           var_axis: int = 1
                            ) :
     # get the data in format acceptable to the surrogate [OLD FORMAT]
     # dataset = get_data ( filepath = DATA_FILE_PATH + "/" + DATA_FILE_NAME ,
@@ -88,6 +85,7 @@ def get_train_test_split ( variables ,
     data_list = []
     x_train_list = []
     x_test_list = []
+
     for v in range ( len ( variables ) ) :
         data_list.append ( get_data_for_variable ( df = df ,
                                                    variable = variables [v] ,
@@ -98,18 +96,18 @@ def get_train_test_split ( variables ,
         x_test_list.append ( data_list [v] [3] )
 
     ## Booster model data
-    BoX_train = np.concatenate ( x_train_list , axis = concate_axis )
+    # First two variables are desired output predictions
     BoY_train_tuple , BoY_test_tuple = [] , []
     for i in range ( num_outputs ) :
         BoY_train_tuple.append ( data_list [i] [2] )
         BoY_test_tuple.append ( data_list [i] [4] )
 
-    BoY_train = np.concatenate ( BoY_train_tuple , axis = 1 )
-    BoX_test = np.concatenate ( x_test_list , axis = concate_axis )
-    BoY_test = np.concatenate ( BoY_test_tuple , axis = 1 )
+    BoX_train = np.stack(x_train_list , axis = var_axis)
+    BoY_train = np.stack( BoY_train_tuple , axis = 1 ).squeeze()
+    BoX_test = np.stack( x_test_list , axis = var_axis )
+    BoY_test = np.stack ( BoY_test_tuple , axis = 1 ).squeeze()
 
     return data_list , BoX_train , BoY_train , BoX_test , BoY_test
-
 
 def train ( nsteps: int = 50000 ,
             look_forward: int = 1 ,
@@ -122,7 +120,7 @@ def train ( nsteps: int = 50000 ,
             num_outputs: int = 2 ,
             clipnorm: float = 1.0 ,
             clipvalue: float = 0.5 ,
-            concate_axis: int = 1 ,
+            var_axis: int = 1 ,
             variables: List [str] = VARIABLES
             ) :
     # get the data in format acceptable to the surrogate
@@ -131,7 +129,7 @@ def train ( nsteps: int = 50000 ,
                                                                                      look_back = look_back ,
                                                                                      look_forward = look_forward ,
                                                                                      nsteps = nsteps ,
-                                                                                     concate_axis = concate_axis )
+                                                                                     var_axis = var_axis )
     print ( BoX_train.shape )
     print ( BoY_train.shape )
     print ( BoX_test.shape )
@@ -142,7 +140,7 @@ def train ( nsteps: int = 50000 ,
     bs = batch_size
     in_shape = (len ( variables ) , look_back)
     out_shape = num_outputs
-    if concate_axis == 2 :
+    if var_axis == 2 :
         # in_shape = (1 , len ( variables ) * look_back)
         in_shape = (look_back, len(variables))
 
@@ -152,7 +150,7 @@ def train ( nsteps: int = 50000 ,
     print ( "date and time:" , timestamp )
     ##
     save_name = SURROGATE_FILE_NAME.format (
-        LOOK_BACK, e , bs , int ( nsteps / 1000 ) , len ( VARIABLES ) , OUTPUTS , concate_axis , timestamp , SURROGATE_VERSION )
+        look_back, e , bs , int ( nsteps / 1000 ) , len ( VARIABLES ) , OUTPUTS , var_axis , timestamp , SURROGATE_VERSION )
 
     # Callbacks
     tensorboard_callback = tf.keras.callbacks.TensorBoard ( log_dir = "./logs" )
@@ -187,9 +185,6 @@ def train ( nsteps: int = 50000 ,
         x_train , x_val = BoX_train [train_index] , BoX_train [val_index]
         y_train , y_val = BoY_train [train_index] , BoY_train [val_index]
 
-        #reshape for 150 lookbacks
-        x_train = x_train.reshape(x_train.shape[0], int(in_shape[0]), LOOK_BACK)
-        x_val = x_val.reshape(x_val.shape[0], int(in_shape[0]), LOOK_BACK)
         print( '########## shape of X_train is: ##########:', x_train.shape)
         print( '########## shape of x_val is: ##########:', x_val.shape)
         print( '########## shape of in_shape[0] is: ##########:', int(in_shape[0]))
@@ -242,6 +237,42 @@ def train ( nsteps: int = 50000 ,
                             data = data_list ,
                             model_file_name = save_name ,
                             save_plot_name = mcp_name ,
-                            concate_axis = concate_axis )
+                            var_axis = var_axis )
 
     return None
+
+if __name__ == '__main__':
+    # ----------- This part is to avoid any CUBLAS errors ------------------------------
+    print( tf.config.list_physical_devices( 'GPU' ) )  # check for the GPU, if being used
+    gpus = tf.config.experimental.list_physical_devices( 'GPU' )
+    if gpus :
+        try :
+            # Currently, memory growth needs to be the same across GPUs
+            for gpu in gpus :
+                tf.config.experimental.set_memory_growth( gpu , True )
+            logical_gpus = tf.config.experimental.list_logical_devices( 'GPU' )
+            print( len( gpus ) , "Physical GPUs," , len( logical_gpus ) , "Logical GPUs" )
+        except RuntimeError as e :
+            # Memory growth must be set before GPUs have been initialized
+            print( e )
+    # ----------- This part is to avoid any CUBLAS errors ------------------------------
+
+    os.makedirs(PLOTS_DIR_FOR_SURROGATE)
+
+    train(
+        nsteps = NSTEPS ,
+        look_forward = LOOK_FORWARD ,
+        look_back = LOOK_BACK ,
+        loss = 'mse' ,
+        optimizer = 'Adam' ,
+        learning_rate = 1e-2 ,
+        epochs = EPOCHS ,
+        batch_size = BATCHES ,
+        num_outputs = OUTPUTS ,
+        clipnorm = 1.0 ,
+        clipvalue = 0.5 ,
+        variables = VARIABLES
+    )
+
+    print("Training complete. Please update LATEST_SURROGATE_MODEL in globals.py")
+

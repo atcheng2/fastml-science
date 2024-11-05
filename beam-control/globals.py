@@ -9,8 +9,6 @@ LOOK_BACK: int = 150 #150
 
 LOOK_FORWARD: int = 1
 
-TRAIN_SURROGATE: bool = True  #if True, the code runs to train a new surrogate
-
 # VARIABLES = ['B:VIMIN', 'B:IMINER', 'B:LINFRQ', 'I:IB', 'I:MDAT40']
 VARIABLES = ['B:VIMIN', 'B:IMINER', 'B_VIMIN', 'B:LINFRQ', 'I:IB', 'I:MDAT40']
 
@@ -46,9 +44,9 @@ SURROGATE_DIR = sys.path[-1] + '/models/surrogate_models/surrogate_model_version
 
 SURROGATE_FILE_NAME = 'fullbooster_noshift_look_back{}_e{}_bs{}_nsteps{}k_invar{}_outvar{}_axis{}_mmscaler_timestamp{}_v{}'
 
-ENV_TYPE = "continuous" #"continuous"
+ENV_TYPE = "continuous"
 
-ENV_VERSION: int = 1 #2
+ENV_VERSION: int = 1
 
 AGENT_EPISODES: int = 1000
 
@@ -61,19 +59,16 @@ IN_PLAY_MODE: bool = False # Turn True to run the agent in the test mode
 now = datetime.now ( )
 timestamp = now.strftime ( "D%m%d%Y-T%H%M%S" )
 
-if TRAIN_SURROGATE == True:
-    SURROGATE_PLOT_DIR = sys.path[-1] + "/results/plots/surrogate_plots/"
-    surrogate_path = os.path.dirname(SURROGATE_PLOT_DIR)
-    surrogate_dir = "surrogate_plots_{}".format(timestamp)
-    surrogate_dir_path = os.path.join(surrogate_path,surrogate_dir)
-    os.makedirs(surrogate_dir_path)
-    PLOTS_DIR_FOR_SURROGATE = surrogate_dir_path
+SURROGATE_PLOT_DIR = sys.path[-1] + "/results/plots/surrogate_plots/"
+surrogate_path = os.path.dirname(SURROGATE_PLOT_DIR)
+surrogate_dir = "surrogate_plots_{}".format(timestamp)
+surrogate_dir_path = os.path.join(surrogate_path,surrogate_dir)
+PLOTS_DIR_FOR_SURROGATE = surrogate_dir_path
 
 POLICY_RESULTS_DIR  = sys.path[-1] +  '/results/plots/policy_plots/'
 ep_dir = "episode_plots_{}".format(timestamp)
 dir_path = os.path.dirname(POLICY_RESULTS_DIR)
 eps_path = os.path.join(dir_path, ep_dir)
-os.makedirs(eps_path)
 EPISODES_PLOTS_DIR = eps_path
 
 #  --------------- make new directories to save training plots categorized by timestamp ---------------

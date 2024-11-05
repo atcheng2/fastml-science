@@ -14,14 +14,26 @@
 ### Fetch training dataset
 - Download ```data release.csv``` from [BOOSTR: A Dataset for Accelerator Control Systems (Partial Release 2020)](https://zenodo.org/record/4088982#.YhAB-ZPMJAc)
     - Rename this file to ```data_release.csv```
-- Download the data files for each of the following signals: ```['B:VIMIN', 'B:IMINER', 'B_VIMIN', 'B:LINFRQ', 'I:IB', 'I:MDAT40']``` from [BOOSTR: A Dataset for Accelerator Control Systems (Full Release 2020)](https://zenodo.org/record/4382663#.YvFGouzMJQI)
-- Place all files into a `data/` subdirectory
+- Alternatively, download the data files for each of the following signals: ```['B:VIMIN', 'B:IMINER', 'B_VIMIN', 'B:LINFRQ', 'I:IB', 'I:MDAT40']``` from [BOOSTR: A Dataset for Accelerator Control Systems (Full Release 2020)](https://zenodo.org/record/4382663#.YvFGouzMJQI)
+    - Combine these datafiles into one ```data_release.csv``` file, with each
+      variable corresponding to a different column
+- Create a `data/` subdirectory and place ```data_release.csv``` inside
 
-## Run Training
+## Surrogate Model Training
+    $ python train_surrogate.py
+
+- Training results will appear in `results/plots/surrogate_plots/`
+- Update `LATEST_SURROGATE_MODEL` in `globals.py` with the path to the new model
+  for agent training
+- You may configure ```globals.py``` to modify surrogate training
+    - Refer to the [Appendix](#Appendix) for more details
+
+## Agent Training
     $ python run_training.py
 
-- You may configure ```globals.py``` to train the surrogate model and the agent
-    - Set ```ARCH_TYPE``` to ```MLP_Quantized``` to train the quantized model
+- Update `LATEST_AGENT_MODEL` in `globals.py` with new model for play mode
+- You may configure ```globals.py``` to modify agent training
+    - Set ```ARCH_TYPE``` to ```MLP_Quantized``` to train the quantized agent
     - Refer to the [Appendix](#Appendix) for more details
 
 ## Appendix:
@@ -33,7 +45,6 @@ The following variables in the `globals.py` file are used to homogenize the trai
 | DATA_CONFIG            | Stores the address to the `.json` file that is used to pull the data for training/ testing.                                                |
 | LOOK_BACK              | Number of ticks in the look back cycle 1 second (cycle - 15Hz).                                                                            |
 | LOOK_FORWARD           | Number of ticks in the look forward cycle                                                                                                  |
-| TRAIN_SURROGATE        | If `True`, a new directory to store surrogate training plots will be created under `results/plots`folder. Kept `False` for agent training. |
 | VARIABLES              | Top causal variables influencing the outputs.                                                                                              |
 | OUTPUTS                | Variables to be considered as outputs during training. MUST include `B:VIMIN`                                                              |
 | NSTEPS                 | Data entries to be used for  training/ testing.                                                                                            |

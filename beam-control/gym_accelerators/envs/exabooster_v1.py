@@ -149,11 +149,18 @@ class ExaBooster_v1(gym.Env):
             data_list.append(get_dataset(data, variable=self.variables[v]))
             x_train.append(data_list[v][0])
         # Axis
-        concate_axis = 2
-        self.X_train = np.concatenate(x_train, axis=concate_axis)
+        self.var_axis = 1
+
+        # Data starts as (batch, samples), need to add a new axis, then can swap
+        # positions if necessary
+        self.X_train = np.stack(x_train, axis=self.var_axis)
         print( 'Data shape:{}'.format( self.X_train.shape ) )
         self.nbatches = self.X_train.shape[0]
-        self.nsamples = self.X_train.shape[1]
+
+        if self.var_axis == 1:
+            self.nsamples = self.X_train.shape[2]
+        else:
+            self.nsamples = self.X_train.shape[1]
 
         if IN_PLAY_MODE:
             self.batch_id = self.episodes + 2500  # to test we need samples that are not random
@@ -178,8 +185,10 @@ class ExaBooster_v1(gym.Env):
             self.actionMap_VIMIN.append(data['B:VIMIN_DIFF'].quantile(i / (self.nactions + 1)))
 
         self.VIMIN = 0
-        # self.state = np.zeros(shape=(1, self.nvariables, self.nsamples))
-        self.state = np.zeros(shape=(1, self.nsamples, self.nvariables))
+        if self.var_axis == 1:
+            self.state = np.zeros(shape=(1, self.nvariables, self.nsamples))
+        else:
+            self.state = np.zeros(shape=(1, self.nsamples, self.nvariables))
         self.predicted_state = np.zeros(shape=(1, self.nvariables, 1))
         logger.debug('Init pred shape:{}'.format(self.predicted_state.shape))
         self.do_render = True  # True
@@ -215,36 +224,52 @@ class ExaBooster_v1(gym.Env):
         self.VIMIN = rescale ( self.variables [ 0 ] , DENORN_BVIMIN ,
                                self.scalers )
         logger.debug('Step() updated VIMIN:{}'.format(self.VIMIN))
-        # self.state[0][0][self.nsamples - 1] = self.VIMIN
-        self.state[0][self.nsamples - 1][0] = self.VIMIN
+        
+        if self.var_axis == 1:
+            self.state[0][0][self.nsamples - 1] = self.VIMIN
+        else:
+            self.state[0][self.nsamples - 1][0] = self.VIMIN
 
         # Step 2: Predict using booster model
+        # FIXME: Might need a np.swapaxes if agent state shape != model shape
         self.predicted_state = self.booster_model.predict(self.state)
         self.predicted_state = self.predicted_state.reshape(1, OUTPUTS, 1)
 
         # Step 3: Shift state by one step
-        # self.state [ 0 , : , 0 :-1 ] = self.state [ 0 , : , 1 : ]  # shift forward
-        self.state [ 0 , 0 :-1,: ] = self.state [ 0 , 1 :, : ]
+        if self.var_axis == 1:
+            self.state [ 0 , : , 0 :-1 ] = self.state [ 0 , : , 1 : ]  # shift forward
+        else:
+            self.state [ 0 , 0 :-1,: ] = self.state [ 0 , 1 :, : ]
         # Step 4: Update IMINER
-        # self.state [ 0 ] [ 1 ] [ self.nsamples - 1 ] = self.predicted_state [ 0 , 1 :2 ]
-        self.state [0][self.nsamples - 1] [1] = self.predicted_state[0, 1:2]
+        if self.var_axis == 1:
+            self.state [ 0 ] [ 1 ] [ self.nsamples - 1 ] = self.predicted_state [ 0 , 1 :2 ]
+        else:
+            self.state [0][self.nsamples - 1] [1] = self.predicted_state[0, 1:2]
 
         # Update data state for rendering
-        self.data_state = np.copy(self.X_train[self.batch_id + self.steps].reshape(1, self.nsamples, self.nvariables))
-        # data_iminer = self.scalers[1].inverse_transform(self.data_state[0][1][self.nsamples - 1].reshape(1, -1))
-        data_iminer =  unscale ( self.variables [ 1 ] ,
-                                self.data_state [ 0 ] [ self.nsamples - 1 ] [ 1 ].reshape ( 1 , -1 ) ,
-                                self.scalers )
+        if self.var_axis == 1:
+            self.data_state = np.copy(self.X_train[self.batch_id + self.steps].reshape(1, self.nvariables, self.nsamples))
+            data_iminer =  unscale ( self.variables [ 1 ] ,
+                                    self.data_state [ 0 ][ 1 ][ self.nsamples - 1 ].reshape ( 1 , -1 ) , self.scalers )
+            # data_iminer = self.scalers[1].inverse_transform(self.data_state[0][1][self.nsamples - 1].reshape(1, -1))
+        else:
+            self.data_state = np.copy(self.X_train[self.batch_id + self.steps].reshape(1, self.nsamples, self.nvariables))
+            data_iminer =  unscale ( self.variables [ 1 ] ,
+                                    self.data_state [ 0 ] [ self.nsamples - 1 ] [ 1 ].reshape ( 1 , -1 ) ,
+                                    self.scalers )
         data_reward = -abs(data_iminer)
 
         # Use data for everything but the B:IMINER prediction
-        # self.state[0, 2:self.nvariables, :] = self.data_state[0, 2:self.nvariables, :]
-        self.state[0 , :, 2 :self.nvariables] = self.data_state[0 , :, 2 :self.nvariables]
+
+        if self.var_axis == 1:
+            self.state[0, 2:self.nvariables, :] = self.data_state[0, 2:self.nvariables, :]
+        else:
+            self.state[0 , :, 2 :self.nvariables] = self.data_state[0 , :, 2 :self.nvariables]
         iminer = self.predicted_state[0, 1]
         logger.debug('norm iminer:{}'.format(iminer))
         # iminer = self.scalers[1].inverse_transform(np.array([iminer]).reshape(1, -1))
         iminer = unscale ( self.variables [ 1 ] , np.array ( [ iminer ] ) , self.scalers ).reshape ( 1 ,
-                                                                                                        -1 )
+                -1 )
         logger.debug('iminer:{}'.format(iminer))
 
         # Reward
@@ -274,8 +299,10 @@ class ExaBooster_v1(gym.Env):
         if self.do_render:
             self.render()
 
-        # return self.state[0, :, -1:].flatten(), np.asscalar(reward), done, {}
-        return self.state [0, -1:, :].flatten(), reward.item(), done, {}
+        if self.var_axis == 1:
+            return self.state [0, :, -1:].flatten(), reward.item(), done, {}
+        else:
+            return self.state [0, -1:, :].flatten(), reward.item(), done, {}
 
     def reset(self):
         self.episodes += 1
@@ -296,19 +323,32 @@ class ExaBooster_v1(gym.Env):
         # self.state = np.zeros(shape=(1,5,150))
         logger.debug('self.state:{}'.format(self.state))
         self.state = None
-        self.state = np.copy(self.X_train[self.batch_id].reshape(1, self.nsamples, self.nvariables))
+        if self.var_axis == 1:
+            self.state = np.copy(self.X_train[self.batch_id].reshape(1, self.nvariables, self.nsamples))
+        else:
+            self.state = np.copy(self.X_train[self.batch_id].reshape(1, self.nsamples, self.nvariables))
         logger.debug('self.state:{}'.format(self.state))
         logger.debug('reset_data.shape:{}'.format(self.state.shape))
-        self.min_BIMIN = unscale( self.variables[0] , self.state[: , : , 0] , self.scalers ).min( )
-        self.max_BIMIN = unscale( self.variables[0] , self.state[: , : , 0] , self.scalers ).max( )
+        if self.var_axis == 1:
+            self.min_BIMIN = unscale( self.variables[0] , self.state[: , 0 , :] , self.scalers ).min( )
+            self.max_BIMIN = unscale( self.variables[0] , self.state[: , 0 , :] , self.scalers ).max( )
+        else:
+            self.min_BIMIN = unscale( self.variables[0] , self.state[: , : , 0] , self.scalers ).min( )
+            self.max_BIMIN = unscale( self.variables[0] , self.state[: , : , 0] , self.scalers ).max( )
         logger.info('Lower and upper B:VIMIN: [{},{}]'.format(self.min_BIMIN, self.max_BIMIN))
-        self.VIMIN = self.state[0 , 0 , -1 :]
+        if self.var_axis == 1:
+            self.VIMIN = self.state[0 , 0 , -1 :]
+        else:
+            self.VIMIN = self.state[0 , -1 : , 0]
         logger.debug('Normed VIMIN:{}'.format(self.VIMIN))
         # logger.debug('B:VIMIN:{}'.format(self.scalers[0].inverse_transform(np.array([self.VIMIN]).reshape(1, -1))))
         logger.debug( 'B:VIMIN:{}'.format(
             unscale( self.variables[0] , np.array( [self.VIMIN] ) , self.scalers ).reshape( 1 ,
                                                                                                -1 ) ) )
-        return self.state[0, -1:, :].flatten()
+        if self.var_axis == 1:
+            return self.state[0, :, -1:].flatten()
+        else:
+            return self.state[0, -1:, :].flatten()
 
     def render(self):
 
@@ -327,7 +367,10 @@ class ExaBooster_v1(gym.Env):
         fig, axs = plt.subplots(nvars, figsize=(12, 8))
         logger.debug('self.state:{}'.format(self.state))
         for v in range(0, nvars):
-            utrace = self.state[0, :, v]
+            if self.var_axis == 1:
+                utrace = self.state[0, v, :]
+            else:
+                utrace = self.state[0, :, v]
             trace = unscale( self.variables[v] , utrace.reshape( -1 , 1 ) ,
                                   self.scalers )
             if v == 0:
@@ -338,8 +381,10 @@ class ExaBooster_v1(gym.Env):
                                                                                                                    self.total_reward, iminer_imp))
             axs[v].plot(trace, label='Digital twin', color='black')
 
-            # if v==1:
-            data_utrace = self.data_state[0, :, v]
+            if self.var_axis == 1:
+                data_utrace = self.data_state[0, v, :]
+            else:
+                data_utrace = self.data_state[0, :, v]
             data_trace =unscale( self.variables[v] , data_utrace.reshape( -1 , 1 ) ,
                                   self.scalers )
             # data_trace = self.scalers[v].inverse_transform(data_utrace.reshape(-1, 1))
